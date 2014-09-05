@@ -673,6 +673,9 @@ public class MusicPlaybackService extends Service {
         // remove any pending alarms
         mAlarmManager.cancel(mShutdownIntent);
 
+        // Remove all pending messages before kill the player
+        mPlayerHandler.removeCallbacksAndMessages(null);
+
         // Release the player
         mPlayer.release();
         mPlayer = null;
@@ -1075,7 +1078,7 @@ public class MusicPlaybackService extends Service {
 
             updateCursor(mPlayList[mPlayPos]);
             while (true) {
-                if (mCursor != null
+                if (mCursor != null && !mCursor.isClosed()
                         && openFile(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI + "/"
                                 + mCursor.getLong(IDCOLIDX))) {
                     break;
@@ -1985,9 +1988,9 @@ public class MusicPlaybackService extends Service {
         mAudioManager.registerMediaButtonEventReceiver(new ComponentName(getPackageName(),
                 MediaButtonIntentReceiver.class.getName()));
 
-        setNextTrack();
-
         if (mPlayer.isInitialized()) {
+            setNextTrack();
+
             final long duration = mPlayer.duration();
             if (mRepeatMode != REPEAT_CURRENT && duration > 2000
                     && mPlayer.position() >= duration - 2000) {
